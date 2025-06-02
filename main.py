@@ -1,39 +1,40 @@
-# I import my project libraries
+from scraper.spider import BookScraper
+from scraper.pipelines import DataPipeline
+import logging
+import os
 
-import requests
-from bs4 import BeautifulSoup
-import time
+# Configuration du logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-# J'utilise la bibliothèque requests pour récupérer le contenu HTML d'une page web
+def main():
+    # Créer les dossiers si nécessaire
+    os.makedirs('data/raw', exist_ok=True)
+    os.makedirs('data/processed', exist_ok=True)
+    
+    # Scraping
+    scraper = BookScraper()
+    books_df = scraper.scrape_books(max_pages=3)
+    
+    # Sauvegarder les données brutes
+    raw_path = 'data/raw/books_raw.csv'
+    books_df.to_csv(raw_path, index=False)
+    logging.info(f"Raw data saved to {raw_path}")
+    
+    # Traitement des données
+    pipeline = DataPipeline()
+    processed_df = pipeline.process(books_df)
+    
+    # Sauvegarder les données traitées
+    processed_path = 'data/processed/books_processed.csv'
+    pipeline.save_to_csv(processed_df, processed_path)
+    
+    db_path = 'data/processed/books.db'
+    pipeline.save_to_sqlite(processed_df, db_path)
+    
+    logging.info(f"Processed data saved to {processed_path} and SQLite database")
 
-url = 'https://example.com'
-response = requests.get(url)
-
-# Vérifiez si la requête a réussi
-if response.status_code == 200:
-    html_content = response.content
-
-else:
-    print(f'Erreur {response.status_code} lors de la récupération de contenu.')
-
-
-# J'utilise beautiful Soup pour analyser le contenu HTML et extraire les données souhaitées
-soup = BeautifulSoup(html_content, 'html.parser')
-
-# Exemple d'extration de texte
-title = soup.title.text
-print(f'Titre de la page : {title}')
-
-# Extration de données
-# exemple
-links = soup.find_all('a')
-for link in links:
-    print(link['href'])
-
-
-# Stockage des données
-all_links = [link['href'] for link in links]
-
-# Ajouter des délais entre les requêtes pour éviter d'être bloqué par les serveurs
-# attendez quelques secondes avant de faire la prochaine requête
-time.sleep(5)
+if __name__ == "__main__":
+    main()
