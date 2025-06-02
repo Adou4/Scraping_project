@@ -16,7 +16,7 @@ def main():
     
     # Scraping
     scraper = BookScraper()
-    books_df = scraper.scrape_books(max_pages=3)
+    books_df = scraper.scrape_books(max_pages=2)
     
     # Sauvegarder les données brutes
     raw_path = 'data/raw/books_raw.csv'
